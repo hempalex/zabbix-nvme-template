@@ -1,10 +1,12 @@
-## Zabbix NVMe Template
+## NVMe by Zabbix Agent Template
+
+nvme-cli 2.x is not supported yet. I'm working on it
 
 ## Install
 
 1) Install `nvme-cli` package on your server
 
-Debian/Ubuntu:
+Debian 11/Ubuntu 22.04:
 
 ```
 $ sudo apt-get install nvme-cli
