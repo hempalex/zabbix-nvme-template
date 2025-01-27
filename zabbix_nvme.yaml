@@ -1,0 +1,516 @@
+zabbix_export:
+  version: '7.2'
+  template_groups:
+    - uuid: e960332b3f6c46a1956486d4f3f99fce
+      name: 'Templates/Server hardware'
+  templates:
+    - uuid: c39c0ee47c854f0e860b73bc3d38c337
+      template: 'NVMe by Zabbix Agent'
+      name: 'NVMe by Zabbix Agent'
+      description: 'The template for monitoring NVMe that works by invoking nvme utility via Zabbix Agent using UserParameter'
+      groups:
+        - name: 'Templates/Server hardware'
+      items:
+        - uuid: e8d31c1187704ee3a61b5e53cd47641a
+          name: 'Discovery raw'
+          key: nvme.discovery
+          history: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.Devices
+          tags:
+            - tag: disktype
+              value: nvme
+      discovery_rules:
+        - uuid: 548c64c30e3c4d4686a4e2161869ec9f
+          name: 'NVME discovery'
+          type: DEPENDENT
+          key: nvme.list
+          item_prototypes:
+            - uuid: a9246795611c4014ac7b6fa75a217e56
+              name: '{#DEVICE} Available Spare'
+              type: DEPENDENT
+              key: 'nvme.avail_spare[{#DEVICE}]'
+              units: '%'
+              description: |
+                Contains a normalized percentage (0% to 100%) of the remaining spare
+                capacity available.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.avail_spare
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 52b9c3619f104f8d93473c2b1b247749
+              name: '{#DEVICE} Controller Busy Time'
+              type: DEPENDENT
+              key: 'nvme.controller_busy_time[{#DEVICE}]'
+              units: m
+              description: |
+                Contains the amount of time the controller is busy with I/O commands.
+                The controller is busy when there is a command outstanding to an I/O Queue (specifically, a command was issued via an I/O Submission Queue Tail doorbell write and the corresponding completion queue entry has not been posted yet to the associated I/O Completion Queue). This value is reported in minutes.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.controller_busy_time
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 2e9df7737aee43878045bd43d4f4a2f3
+              name: '{#DEVICE} Critical Warning'
+              type: DEPENDENT
+              key: 'nvme.critical_warning[{#DEVICE}]'
+              description: |
+                Critical Warning: This field indicates critical warnings for the state of the controller. Each bit corresponds to a critical warning type; multiple bits may be set. If a bit is cleared to ‘0’, then that critical warning does not apply. Critical warnings may result in an asynchronous event notification to the host. Bits in this field represent the current associated state and are not persistent.
+                Bit Definition
+                00: If set to ‘1’, then the available spare space has fallen below the threshold.
+                01: If set to ‘1’, then a temperature is above an over temperature threshold or below an under temperature threshold.
+                02: If set to ‘1’, then the NVM subsystem reliability has been degraded due to significant media related errors or any internal error that degrades NVM subsystem reliability.
+                03: If set to ‘1’, then the media has been placed in read only mode.
+                04: If set to ‘1’, then the volatile memory backup device has failed. This field is only valid if the controller has a volatile memory backup solution.
+                07:05: Reserved
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.critical_warning
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+              trigger_prototypes:
+                - uuid: db5c3af683224fbe9c1ffbbb9ae153c7
+                  expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]), 1) <> 0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]),1)=0'
+                  name: 'NVME {#DEVICE} - Available spare capacity below treshhold'
+                  priority: HIGH
+                  description: 'Device {#DEVICE} available spare capacity has fallen below the threshold'
+                - uuid: e64b3117e4bb4a4d9d96484aa746308a
+                  expression: 'last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}])<>0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}])=0'
+                  name: 'NVME {#DEVICE} - Critical Warning'
+                  priority: HIGH
+                  description: 'Device {#DEVICE} in critical warning state'
+                - uuid: dc2579f199ea4fafa755384f3c5b8284
+                  expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]), 4) <> 0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]),4)=0'
+                  name: 'NVME {#DEVICE} - Degraded'
+                  priority: HIGH
+                  description: |
+                    Device {#DEVICE} reliability has been degraded due to significant
+                    media related errors or any internal error that degrades reliability
+                - uuid: e50e0b3ef0b64768b7626bc49ab924e3
+                  expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]), 32) <> 0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]),32)=0'
+                  name: 'NVME {#DEVICE} - Persistent Memory Region error'
+                  priority: HIGH
+                  description: 'Device {#DEVICE}  Persistent Memory Region has become read-only or unreliable'
+                - uuid: 346d8910719249808f3afdaf2ed85398
+                  expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]), 8) <> 0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]),8)=0'
+                  name: 'NVME {#DEVICE} - Read Only Mode'
+                  priority: HIGH
+                  description: 'Device {#DEVICE} in Read Only Mode'
+                - uuid: 96ab7cb8110a4a04bff4069c7e70b7e3
+                  expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]), 2) <> 0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]),2)=0'
+                  name: 'NVME {#DEVICE} - Temperature over or under treshhold'
+                  priority: HIGH
+                  description: 'Device {#DEVICE} temperature is greater than or equal to an over temperature threshold; or less than or equal to an under temperature threshold'
+                - uuid: 2a81da5e4fc345ef9783961075dd2319
+                  expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]), 16) <> 0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'bitand(last(/NVMe by Zabbix Agent/nvme.critical_warning[{#DEVICE}]),16)=0'
+                  name: 'NVME {#DEVICE} - Volatile Memory Backup Device failed'
+                  priority: HIGH
+                  description: 'Device {#DEVICE} Volatile memory backup device has failed.'
+            - uuid: 72f9beb4b1354f4bbebb6d413c09ee77
+              name: '{#DEVICE} Data Read'
+              type: CALCULATED
+              key: 'nvme.data_bytes_read[{#DEVICE}]'
+              units: b
+              params: 'last(//nvme.data_units_read[{#DEVICE}])*512*1000'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: b8bc4ba7cc9941748580daec142e03db
+              name: '{#DEVICE} Data Written'
+              type: CALCULATED
+              key: 'nvme.data_bytes_written[{#DEVICE}]'
+              units: b
+              params: 'last(//nvme.data_units_written[{#DEVICE}])*512*1000'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+              trigger_prototypes:
+                - uuid: 2b3fb0d3d6aa41cf8eac008fefdc50ca
+                  expression: 'last(/NVMe by Zabbix Agent/nvme.data_bytes_written[{#DEVICE}])/1000000000000>{$NVME_TBW_MAX}'
+                  name: 'NVME {#DEVICE} TWB exceeds {$NVME_TBW_MAX} Tb'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 1b88fa4f017f486faaeffaf02083bc26
+              name: '{#DEVICE} Data Units Read'
+              type: DEPENDENT
+              key: 'nvme.data_units_read[{#DEVICE}]'
+              description: |
+                Contains the number of 512 byte data units the host has read from the
+                controller; this value does not include metadata. This value is reported in thousands (i.e., a value of 1 corresponds to 1,000 units of 512 bytes read) and is rounded up (e.g., one indicates the that number of 512 byte data units read is from 1 to 1,000, three indicates that the number of 512 byte data units read is from 2,001 to 3,000). When the LBA size is a value other than 512 bytes, the controller shall convert the amount of data read to 512 byte units. For the NVM command set, logical blocks read as part of Compare, Read, and Verify operations shall be included in this value.
+                A value of 0h in this field indicates that the number of Data Units Read is not reported.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.data_units_read
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: e7928943788a43bc87df649ff2f99bb6
+              name: '{#DEVICE} Data Units Written'
+              type: DEPENDENT
+              key: 'nvme.data_units_written[{#DEVICE}]'
+              description: |
+                Contains the number of 512 byte data units the host has written to the
+                controller; this value does not include metadata. This value is reported in thousands (i.e., a value of 1 corresponds to 1,000 units of 512 bytes written) and is rounded up (e.g., one indicates that the number of 512 byte data units written is from 1 to 1,000, three indicates that the number of 512 byte data units written is from 2,001 to 3,000). When the LBA size is a value other than 512 bytes, the controller shall convert the amount of data written to 512 byte units.
+                For the NVM command set, logical blocks written as part of Write operations shall be included in this value. Write Uncorrectable commands shall not impact this value.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.data_units_written
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 0a075b5bbeac489fb64fc84312ef7db0
+              name: '{#DEVICE} Firmware'
+              type: DEPENDENT
+              key: 'nvme.firmware[{#DEVICE}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.DevicePath == "{#DEVICE}")].Firmware.first()'
+              master_item:
+                key: nvme.discovery
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 93dc0d1d9d244b2da1b3d870b1e6d511
+              name: '{#DEVICE} Host Read Commands'
+              type: DEPENDENT
+              key: 'nvme.host_read_commands[{#DEVICE}]'
+              description: |
+                Contains the number of read commands completed by the controller.
+                For the NVM command set, this value is the sum of the number of Compare commands and the number of Read commands.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.host_read_commands
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 7fba34fdb069488ba94627a2e8cb3401
+              name: '{#DEVICE} Host Write Commands'
+              type: DEPENDENT
+              key: 'nvme.host_write_commands[{#DEVICE}]'
+              description: |
+                Contains the number of write commands completed by the
+                controller. For the NVM command set, this is the number of Write commands.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.host_write_commands
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: cb23b54c411641af8792d6b7af80e86d
+              name: '{#DEVICE} Media Errors'
+              type: DEPENDENT
+              key: 'nvme.media_errors[{#DEVICE}]'
+              description: 'Contains the number of occurrences where the controller detected an unrecovered data integrity error. Errors such as uncorrectable ECC, CRC checksum failure, or LBA tag mismatch are included in this field. Errors introduced as a result of a Write Uncorrectable command (refer to section 6.16) may or may not be included in this field.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.media_errors
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 77b9c3ec940b4d2aa5a74320d5b51cf3
+              name: '{#DEVICE} Model'
+              type: DEPENDENT
+              key: 'nvme.model[{#DEVICE}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.DevicePath == "{#DEVICE}")].ModelNumber.first()'
+              master_item:
+                key: nvme.discovery
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 0dfcefa2d86040bea1e99fd069906351
+              name: '{#DEVICE} Number of Error Information Log Entries'
+              type: DEPENDENT
+              key: 'nvme.num_err_log_entries[{#DEVICE}]'
+              description: 'Contains the number of Error Information log entries over the life of the controller.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.num_err_log_entries
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 941f6f2adad74b3dbfc644522975d1b1
+              name: '{#DEVICE} Precent Used'
+              type: DEPENDENT
+              key: 'nvme.percent_used[{#DEVICE}]'
+              units: '%'
+              description: |
+                Contains a vendor specific estimate of the percentage of NVM subsystem
+                life used based on the actual usage and the manufacturer’s prediction of NVM life. A value of 100 indicates that the estimated endurance of the NVM in the NVM subsystem has been consumed, but may not indicate an NVM subsystem failure. The value is allowed to exceed 100. Percentages greater than 254 shall be represented as 255. This value shall be updated once per power-on hour (when the controller is not in a sleep state)
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.percent_used
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+              trigger_prototypes:
+                - uuid: 6a3a362fce2d4f6888cfc676d7178a68
+                  expression: 'last(/NVMe by Zabbix Agent/nvme.percent_used[{#DEVICE}])>{$NVME_USED_MAX}'
+                  name: 'NVME {#DEVICE} Precentage Used exceeds {$NVME_USED_MAX}%'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: e3b46ac0fbe14581baf6eb299baf1259
+              name: '{#DEVICE} Power Cycles'
+              type: DEPENDENT
+              key: 'nvme.power_cycles[{#DEVICE}]'
+              description: 'Contains the number of power cycles'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.power_cycles
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: d0b24e22edff4ec4ade9b9e430f9d501
+              name: '{#DEVICE} Power On Hours'
+              type: DEPENDENT
+              key: 'nvme.power_on_hours[{#DEVICE}]'
+              units: h
+              description: |
+                Contains the number of power-on hours. This may not include time that
+                the controller was powered and in a non-operational power state.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.power_on_hours
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 0c0953831b564ef28fe2f5ed20a635c9
+              name: '{#DEVICE} Sector Size'
+              type: DEPENDENT
+              key: 'nvme.sectorsize[{#DEVICE}]'
+              trends: '0'
+              units: b
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.DevicePath == "{#DEVICE}")].SectorSize.first()'
+              master_item:
+                key: nvme.discovery
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: b9c894b722e1432fa77c815fbab5dd97
+              name: '{#DEVICE} Serial'
+              type: DEPENDENT
+              key: 'nvme.serial[{#DEVICE}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.DevicePath == "{#DEVICE}")].SerialNumber.first()'
+              master_item:
+                key: nvme.discovery
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 17c3d84ae63f4d4c90bd4b80ac1343fe
+              name: '{#DEVICE} Size'
+              type: DEPENDENT
+              key: 'nvme.size[{#DEVICE}]'
+              trends: '0'
+              units: b
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.DevicePath == "{#DEVICE}")].PhysicalSize.first()'
+              master_item:
+                key: nvme.discovery
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 3b7c6219d9154280aee8b9abda6244bc
+              name: '{#DEVICE} Spare threshold'
+              type: DEPENDENT
+              key: 'nvme.spare_thresh[{#DEVICE}]'
+              units: '%'
+              description: |
+                When the Available Spare falls below the threshold indicated in
+                this field, an asynchronous event completion may occur. The value is indicated as a normalized percentage (0% to 100%). The values 101 to 255 are reserved.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.spare_thresh
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: a6c202cd96ea45cd8a6666a88eb6ef2e
+              name: '{#DEVICE} Temp'
+              type: DEPENDENT
+              key: 'nvme.temp[{#DEVICE}]'
+              units: °C
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.temperature
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value-273'
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: 284ceac196a6415f98a035244255f658
+              name: '{#DEVICE} Unsafe Shutdowns'
+              type: DEPENDENT
+              key: 'nvme.unsafe_shutdowns[{#DEVICE}]'
+              description: |
+                Contains the number of unsafe shutdowns. This count is incremented
+                when a Shutdown Notification is not received prior to loss of power.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.unsafe_shutdowns
+              master_item:
+                key: 'nvme[{#DEVICE}]'
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: b17ca5a9dac6474ca7e586fc68c7e655
+              name: '{#DEVICE} Space Used'
+              type: DEPENDENT
+              key: 'nvme.used[{#DEVICE}]'
+              trends: '0'
+              units: b
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.DevicePath == "{#DEVICE}")].UsedBytes.first()'
+              master_item:
+                key: nvme.discovery
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+            - uuid: ff2e302976ce499ca7c44a1ee593262c
+              name: 'Get {#DEVICE} smart-log'
+              key: 'nvme[{#DEVICE}]'
+              history: '0'
+              value_type: TEXT
+              tags:
+                - tag: device
+                  value: '{#DEVICE}'
+                - tag: disktype
+                  value: nvme
+          master_item:
+            key: nvme.discovery
+          lld_macro_paths:
+            - lld_macro: '{#DEVICE}'
+              path: $.DevicePath
+      macros:
+        - macro: '{$NVME_TBW_MAX}'
+          value: '300'
+          description: 'max TB Written'
+        - macro: '{$NVME_USED_MAX}'
+          value: '80'
+          description: 'max Percentage Used'
