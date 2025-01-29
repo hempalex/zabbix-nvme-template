@@ -31,7 +31,7 @@ zabbix_export:
           preprocessing:
             - type: JSONPATH
               parameters:
-                - '$.Devices[*].Subsystems[*].Controllers[*]'
+                - '$.Devices[*]..Controllers[*]'
           master_item:
             key: nvme.discovery
           tags:
@@ -48,7 +48,7 @@ zabbix_export:
           preprocessing:
             - type: JSONPATH
               parameters:
-                - '$.Devices[*].Subsystems[*].Controllers[*].Namespaces[*]'
+                - '$.Devices[*]..Controllers[*].Namespaces[*]'
           master_item:
             key: nvme.discovery
           tags:
