@@ -1,6 +1,6 @@
 ## NVMe by Zabbix Agent Template
 
-nvme-cli 2.x is not supported yet. I'm working on it
+Tested on Zabbix version 7.0, 7.2. nvme-cli 1.16, 2.08, 2.11
 
 ## Install
 
