@@ -12,22 +12,20 @@ zabbix_export:
         - name: 'Templates/Server hardware'
       items:
         - uuid: a05a508e3633433aac588c04da67d9d4
-          name: 'Discovery raw'
+          name: 'NVMe Discovery raw'
           key: nvme.discovery
+          delay: 10m
           history: '0'
           value_type: TEXT
-          trends: '0'
           tags:
             - tag: devicetype
               value: nvme
         - uuid: e8d31c1187704ee3a61b5e53cd47641a
-          name: 'Discovery controllers'
+          name: 'NVMe Discovery devices'
           type: DEPENDENT
           key: nvme.discovery.ctrl
-          delay: '0'
           history: '0'
           value_type: TEXT
-          trends: '0'
           preprocessing:
             - type: JSONPATH
               parameters:
@@ -38,17 +36,15 @@ zabbix_export:
             - tag: devicetype
               value: nvme
         - uuid: 678ecc5054da468080ac98100097a336
-          name: 'Discovery namespaces'
+          name: 'NVMe Discovery NS'
           type: DEPENDENT
           key: nvme.discovery.ns
-          delay: '0'
           history: '0'
           value_type: TEXT
-          trends: '0'
           preprocessing:
             - type: JSONPATH
               parameters:
-                - '$.Devices[*]..Controllers[*].Namespaces[*]'
+                - '$.Devices[*]..Namespaces[*]'
           master_item:
             key: nvme.discovery
           tags:
@@ -59,13 +55,11 @@ zabbix_export:
           name: 'NVME discovery controllers'
           type: DEPENDENT
           key: nvme.list.ctrl
-          delay: '0'
           item_prototypes:
             - uuid: a9246795611c4014ac7b6fa75a217e56
               name: '{#DEVICE} Available Spare'
               type: DEPENDENT
               key: 'nvme.avail_spare[{#DEVICE}]'
-              delay: '0'
               units: '%'
               description: |
                 Contains a normalized percentage (0% to 100%) of the remaining spare
@@ -85,10 +79,8 @@ zabbix_export:
               name: '{#DEVICE} Controller Busy Time'
               type: DEPENDENT
               key: 'nvme.controller_busy_time[{#DEVICE}]'
-              delay: '0'
               units: m
-              description: |
-                Contains the amount of time the controller is busy with I/O commands. The controller is busy when there is a command outstanding to an I/O Queue (specifically, a command was issued via an I/O Submission Queue Tail doorbell write and the corresponding completion queue entry has not been posted yet to the associated I/O Completion Queue). This value is reported in minutes.
+              description: 'Contains the amount of time the controller is busy with I/O commands. The controller is busy when there is a command outstanding to an I/O Queue (specifically, a command was issued via an I/O Submission Queue Tail doorbell write and the corresponding completion queue entry has not been posted yet to the associated I/O Completion Queue). This value is reported in minutes.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -104,7 +96,6 @@ zabbix_export:
               name: '{#DEVICE} Critical Warning'
               type: DEPENDENT
               key: 'nvme.critical_warning[{#DEVICE}]'
-              delay: '0'
               description: |
                 Critical Warning: This field indicates critical warnings for the state of the controller. Each bit corresponds to a critical warning type; multiple bits may be set. If a bit is cleared to ‘0’, then that critical warning does not apply. Critical warnings may result in an asynchronous event notification to the host. Bits in this field represent the current associated state and are not persistent.
                 Bit Definition
@@ -209,9 +200,7 @@ zabbix_export:
               name: '{#DEVICE} Data Units Read'
               type: DEPENDENT
               key: 'nvme.data_units_read[{#DEVICE}]'
-              delay: '0'
-              description: |
-                Contains the number of 512 byte data units the host has read from the controller; this value does not include metadata. This value is reported in thousands (i.e., a value of 1 corresponds to 1,000 units of 512 bytes read) and is rounded up (e.g., one indicates the that number of 512 byte data units read is from 1 to 1,000, three indicates that the number of 512 byte data units read is from 2,001 to 3,000). When the LBA size is a value other than 512 bytes, the controller shall convert the amount of data read to 512 byte units. For the NVM command set, logical blocks read as part of Compare, Read, and Verify operations shall be included in this value. A value of 0h in this field indicates that the number of Data Units Read is not reported.
+              description: 'Contains the number of 512 byte data units the host has read from the controller; this value does not include metadata. This value is reported in thousands (i.e., a value of 1 corresponds to 1,000 units of 512 bytes read) and is rounded up (e.g., one indicates the that number of 512 byte data units read is from 1 to 1,000, three indicates that the number of 512 byte data units read is from 2,001 to 3,000). When the LBA size is a value other than 512 bytes, the controller shall convert the amount of data read to 512 byte units. For the NVM command set, logical blocks read as part of Compare, Read, and Verify operations shall be included in this value. A value of 0h in this field indicates that the number of Data Units Read is not reported.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -227,9 +216,7 @@ zabbix_export:
               name: '{#DEVICE} Data Units Written'
               type: DEPENDENT
               key: 'nvme.data_units_written[{#DEVICE}]'
-              delay: '0'
-              description: |
-                Contains the number of 512 byte data units the host has written to the controller; this value does not include metadata. This value is reported in thousands (i.e., a value of 1 corresponds to 1,000 units of 512 bytes written) and is rounded up (e.g., one indicates that the number of 512 byte data units written is from 1 to 1,000, three indicates that the number of 512 byte data units written is from 2,001 to 3,000). When the LBA size is a value other than 512 bytes, the controller shall convert the amount of data written to 512 byte units. For the NVM command set, logical blocks written as part of Write operations shall be included in this value. Write Uncorrectable commands shall not impact this value.
+              description: 'Contains the number of 512 byte data units the host has written to the controller; this value does not include metadata. This value is reported in thousands (i.e., a value of 1 corresponds to 1,000 units of 512 bytes written) and is rounded up (e.g., one indicates that the number of 512 byte data units written is from 1 to 1,000, three indicates that the number of 512 byte data units written is from 2,001 to 3,000). When the LBA size is a value other than 512 bytes, the controller shall convert the amount of data written to 512 byte units. For the NVM command set, logical blocks written as part of Write operations shall be included in this value. Write Uncorrectable commands shall not impact this value.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -245,9 +232,7 @@ zabbix_export:
               name: '{#DEVICE} Firmware'
               type: DEPENDENT
               key: 'nvme.firmware[{#DEVICE}]'
-              delay: '0'
               value_type: TEXT
-              trends: '0'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -263,9 +248,7 @@ zabbix_export:
               name: '{#DEVICE} Host Read Commands'
               type: DEPENDENT
               key: 'nvme.host_read_commands[{#DEVICE}]'
-              delay: '0'
-              description: |
-                Contains the number of read commands completed by the controller. For the NVM command set, this value is the sum of the number of Compare commands and the number of Read commands.
+              description: 'Contains the number of read commands completed by the controller. For the NVM command set, this value is the sum of the number of Compare commands and the number of Read commands.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -281,9 +264,7 @@ zabbix_export:
               name: '{#DEVICE} Host Write Commands'
               type: DEPENDENT
               key: 'nvme.host_write_commands[{#DEVICE}]'
-              delay: '0'
-              description: |
-                Contains the number of write commands completed by the controller. For the NVM command set, this is the number of Write commands.
+              description: 'Contains the number of write commands completed by the controller. For the NVM command set, this is the number of Write commands.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -299,7 +280,6 @@ zabbix_export:
               name: '{#DEVICE} Media Errors'
               type: DEPENDENT
               key: 'nvme.media_errors[{#DEVICE}]'
-              delay: '0'
               description: 'Contains the number of occurrences where the controller detected an unrecovered data integrity error. Errors such as uncorrectable ECC, CRC checksum failure, or LBA tag mismatch are included in this field. Errors introduced as a result of a Write Uncorrectable command (refer to section 6.16) may or may not be included in this field.'
               preprocessing:
                 - type: JSONPATH
@@ -316,9 +296,7 @@ zabbix_export:
               name: '{#DEVICE} Model'
               type: DEPENDENT
               key: 'nvme.model[{#DEVICE}]'
-              delay: '0'
               value_type: TEXT
-              trends: '0'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -334,7 +312,6 @@ zabbix_export:
               name: '{#DEVICE} Number of Error Information Log Entries'
               type: DEPENDENT
               key: 'nvme.num_err_log_entries[{#DEVICE}]'
-              delay: '0'
               description: 'Contains the number of Error Information log entries over the life of the controller.'
               preprocessing:
                 - type: JSONPATH
@@ -348,10 +325,9 @@ zabbix_export:
                 - tag: 'nvme device'
                   value: '{#DEVICE}'
             - uuid: 941f6f2adad74b3dbfc644522975d1b1
-              name: '{#DEVICE} Precent Used'
+              name: '{#DEVICE} Precentage Used'
               type: DEPENDENT
               key: 'nvme.percent_used[{#DEVICE}]'
-              delay: '0'
               units: '%'
               description: |
                 Contains a vendor specific estimate of the percentage of NVM subsystem
@@ -377,7 +353,6 @@ zabbix_export:
               name: '{#DEVICE} Power Cycles'
               type: DEPENDENT
               key: 'nvme.power_cycles[{#DEVICE}]'
-              delay: '0'
               description: 'Contains the number of power cycles'
               preprocessing:
                 - type: JSONPATH
@@ -394,10 +369,8 @@ zabbix_export:
               name: '{#DEVICE} Power On Hours'
               type: DEPENDENT
               key: 'nvme.power_on_hours[{#DEVICE}]'
-              delay: '0'
               units: h
-              description: |
-                Contains the number of power-on hours. This may not include time that the controller was powered and in a non-operational power state.
+              description: 'Contains the number of power-on hours. This may not include time that the controller was powered and in a non-operational power state.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -413,7 +386,6 @@ zabbix_export:
               name: '{#DEVICE} Spare threshold'
               type: DEPENDENT
               key: 'nvme.spare_thresh[{#DEVICE}]'
-              delay: '0'
               units: '%'
               description: |
                 When the Available Spare falls below the threshold indicated in
@@ -433,7 +405,6 @@ zabbix_export:
               name: '{#DEVICE} Temp'
               type: DEPENDENT
               key: 'nvme.temp[{#DEVICE}]'
-              delay: '0'
               units: °C
               preprocessing:
                 - type: JSONPATH
@@ -453,9 +424,7 @@ zabbix_export:
               name: '{#DEVICE} Unsafe Shutdowns'
               type: DEPENDENT
               key: 'nvme.unsafe_shutdowns[{#DEVICE}]'
-              delay: '0'
-              description: |
-                Contains the number of unsafe shutdowns. This count is incremented when a Shutdown Notification is not received prior to loss of power.
+              description: 'Contains the number of unsafe shutdowns. This count is incremented when a Shutdown Notification is not received prior to loss of power.'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -468,11 +437,10 @@ zabbix_export:
                 - tag: 'nvme device'
                   value: '{#DEVICE}'
             - uuid: ff2e302976ce499ca7c44a1ee593262c
-              name: 'Get {#DEVICE} smart-log'
+              name: 'NVMe {#DEVICE} smart-log'
               key: 'nvme[{#DEVICE}]'
               history: '0'
               value_type: TEXT
-              trends: '0'
               tags:
                 - tag: devicetype
                   value: nvme
@@ -487,13 +455,11 @@ zabbix_export:
           name: 'NVME discovery namespaces'
           type: DEPENDENT
           key: nvme.list.ns
-          delay: '0'
           item_prototypes:
             - uuid: 5e1f1c6ba14b4a449fbc531bd10385d4
               name: '{#NS} ID'
               type: DEPENDENT
               key: 'nvme.ns.id[{#NS}]'
-              delay: '0'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -509,7 +475,6 @@ zabbix_export:
               name: '{#NS} Sector Size'
               type: DEPENDENT
               key: 'nvme.ns.sector_size[{#NS}]'
-              delay: '0'
               units: b
               preprocessing:
                 - type: JSONPATH
@@ -526,7 +491,6 @@ zabbix_export:
               name: '{#NS} Physical Size'
               type: DEPENDENT
               key: 'nvme.ns.size[{#NS}]'
-              delay: '0'
               units: b
               preprocessing:
                 - type: JSONPATH
@@ -543,7 +507,6 @@ zabbix_export:
               name: '{#NS} Used Bytes'
               type: DEPENDENT
               key: 'nvme.ns.used[{#NS}]'
-              delay: '0'
               units: b
               preprocessing:
                 - type: JSONPATH
