@@ -6,7 +6,7 @@ Tested on Zabbix version 7.0, 7.2. nvme-cli 1.16, 2.08, 2.11
 
 1) Install `nvme-cli` package on your server
 
-Debian 11/Ubuntu 22.04:
+Debian/Ubuntu:
 
 ```
 $ sudo apt-get install nvme-cli
